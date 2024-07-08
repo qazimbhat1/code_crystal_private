@@ -21,29 +21,44 @@ import torch.nn as nn
 from transformers import AutoConfig, AutoModelForCausalLM, \
                          LlamaConfig, LlamaModel, LlamaForCausalLM
 
+from .crystal_coder.modeling_crystalcoder import CrystalCoderModel, CrystalCoderLMHeadModel, CrystalCoderConfig
+
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
 from ..llava_arch import LlavaMetaModel, LlavaMetaForCausalLM
 
 
-class LlavaConfig(LlamaConfig):
-    model_type = "llava"
+class LlavaCrystalConfig(CrystalCoderConfig):
+    model_type = "llava_crystal"
 
 
-class LlavaLlamaModel(LlavaMetaModel, LlamaModel):
-    config_class = LlavaConfig
+class LlavaCrystalModel(LlavaMetaModel, CrystalCoderModel):
+    config_class = LlavaCrystalConfig
 
-    def __init__(self, config: LlamaConfig):
-        super(LlavaLlamaModel, self).__init__(config)
+    def __init__(self, config: CrystalCoderConfig):
+        #TODO: check with mpt if anything needed here
+        super(LlavaCrystalModel, self).__init__(config)
+    def embed_tokens(self, x):
+        return self.wte(x)
 
-
-class LlavaLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
-    config_class = LlavaConfig
+class LlavaCrystalForCausalLM(CrystalCoderLMHeadModel, LlavaMetaForCausalLM):
+    config_class = LlavaCrystalConfig
 
     def __init__(self, config):
-        super(LlamaForCausalLM, self).__init__(config)
-        self.model = LlavaLlamaModel(config)
-        self.pretraining_tp = config.pretraining_tp
+        super(CrystalCoderLMHeadModel, self).__init__(config)
+        # print(config)
+        self.transformer = LlavaCrystalModel(config)
+
+
+        self.output_logits_scale = config.mup_output_alpha * config.mup_width_scale
+        # Model parallel
+        self.model_parallel = False
+        self.device_map = None
+        # print(self.transformer)
+        # print("embedding", self.transformer.get_input_embeddings())
+        # self.pretraining_tp = config.pretraining_tp
+
+        
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
@@ -51,7 +66,13 @@ class LlavaLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
         self.post_init()
 
     def get_model(self):
-        return self.model
+        return self.transformer
+    
+    def get_input_embeddings(self):
+        return self.transformer.wte
+
+    def set_input_embeddings(self, new_embeddings):
+        self.transformer.wte = new_embeddings
 
     def forward(
         self,
@@ -66,6 +87,10 @@ class LlavaLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
         output_hidden_states: Optional[bool] = None,
         images: Optional[torch.FloatTensor] = None,
         return_dict: Optional[bool] = None,
+        token_type_ids: Optional[torch.LongTensor] = None, #TODO: check these 4 below added from crystal coder class
+        head_mask: Optional[torch.FloatTensor] = None,
+        encoder_hidden_states: Optional[torch.Tensor] = None,
+        encoder_attention_mask: Optional[torch.FloatTensor] = None
     ) -> Union[Tuple, CausalLMOutputWithPast]:
 
         if inputs_embeds is None:
@@ -107,5 +132,16 @@ class LlavaLlamaForCausalLM(LlamaForCausalLM, LlavaMetaForCausalLM):
             _inputs['images'] = images
         return _inputs
 
-AutoConfig.register("llava", LlavaConfig)
-AutoModelForCausalLM.register(LlavaConfig, LlavaLlamaForCausalLM)
+AutoConfig.register("llava_crystal", LlavaCrystalConfig)
+AutoModelForCausalLM.register(LlavaCrystalConfig, LlavaCrystalForCausalLM)
+
+
+# from transformers import AutoConfig, AutoModel, AutoModelForCausalLM, AutoTokenizer
+# from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
+# from configuration_crystalcoder import CrystalCoderConfig
+
+
+# AutoConfig.register("crystalcoder", CrystalCoderConfig)
+# AutoModel.register(CrystalCoderConfig, CrystalCoderModel)
+# AutoModelForCausalLM.register(CrystalCoderConfig, CrystalCoderLMHeadModel)
+# AutoTokenizer.register(CrystalCoderConfig, fast_tokenizer_class=PreTrainedTokenizerFast)

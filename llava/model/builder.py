@@ -21,10 +21,10 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, AutoConfig, BitsAn
 import torch
 from llava.model import *
 from llava.constants import DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
+# from llava.model.language_model.crystal_coder.tokenization_crystalcoder_fast import *
 
-
-def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda"):
-    kwargs = {"device_map": device_map}
+def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, load_4bit=False, device_map="auto", device="cuda", **kwargs):
+    kwargs = {"device_map": device_map, **kwargs}
 
     if device != "cuda":
         kwargs['device_map'] = {"": device}
@@ -101,8 +101,37 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             if 'mpt' in model_name.lower():
                 tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
                 model = LlavaMPTForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+            elif 'codellm' in model_name.lower():
+                tokenizer = AutoTokenizer.from_pretrained("/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/llava/model/language_model/crystal_coder/", 
+                # tokenizer = AutoTokenizer.from_pretrained(model_path,
+                    # cache_dir=training_args.cache_dir,
+                    # model_max_length=training_args.model_max_length,
+                    padding_side="right",
+                    trust_remote_code=True
+                )
+                # tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+                model = LlavaCrystalForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+            
+            elif 'crystal_chat' in model_name.lower():
+                tokenizer = AutoTokenizer.from_pretrained(
+                    "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/llava/model/language_model/crystal_chat/",
+                    # cache_dir=training_args.cache_dir,
+                    # model_max_length=training_args.model_max_length,
+                    padding_side="right",
+                    trust_remote_code=True
+                )
+                # tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
+                model = LlavaCrystalForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
+            
             else:
-                tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+                # tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
+                tokenizer = AutoTokenizer.from_pretrained(
+                    "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/llava/model/language_model/crystal_chat/",
+                    # cache_dir=training_args.cache_dir,
+                    # model_max_length=training_args.model_max_length,
+                    padding_side="right",
+                    trust_remote_code=True
+                )
                 model = LlavaLlamaForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
     else:
         # Load language model
