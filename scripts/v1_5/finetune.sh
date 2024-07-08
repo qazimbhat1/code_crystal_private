@@ -4,8 +4,8 @@ deepspeed llava/train/train_mem.py \
     --deepspeed ./scripts/zero3.json \
     --model_name_or_path lmsys/vicuna-13b-v1.5 \
     --version v1 \
-    --data_path /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/output_new_jinbo_web_train.json  \
-    --image_folder ./playground/data/llava_finetune_data \
+    --data_path /lustre/scratch/shared-folders/vision-project/Backup/llava_data/finetune_json/LLaVA_665k/llava_v1_5_mix665k.json \
+    --image_folder /lustre/scratch/shared-folders/vision-project/Backup/llava_data/llava_finetune_image/ \
     --vision_tower openai/clip-vit-large-patch14-336 \
     --pretrain_mm_mlp_adapter ./checkpoints/llava-v1.5-13b-pretrain/mm_projector.bin \
     --mm_projector_type mlp2x_gelu \
@@ -13,13 +13,13 @@ deepspeed llava/train/train_mem.py \
     --mm_use_im_start_end False \
     --mm_use_im_patch_token False \
     --image_aspect_ratio pad \
-    --group_by_modality_length False \
+    --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/test_1 \
+    --output_dir ./checkpoints/llava-v1.5-13b \
     --num_train_epochs 1 \
-    --per_device_train_batch_size 8 \
+    --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 4 \
+    --gradient_accumulation_steps 1 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 50000 \

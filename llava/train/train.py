@@ -165,15 +165,12 @@ def find_all_linear_names(model):
     lora_module_names = set()
     multimodal_keywords = ['mm_projector', 'vision_tower', 'vision_resampler']
     for name, module in model.named_modules():
-        # print(name, str(type(module)))
-
         if any(mm_keyword in name for mm_keyword in multimodal_keywords):
             continue
         if isinstance(module, cls):
             names = name.split('.')
             lora_module_names.add(names[0] if len(names) == 1 else names[-1])
-    # print(lora_module_names)
-    # raise
+
     if 'lm_head' in lora_module_names: # needed for 16-bit
         lora_module_names.remove('lm_head')
     return list(lora_module_names)
@@ -656,7 +653,7 @@ class LazySupervisedDataset(Dataset):
         length_list = []
         for sample in self.list_data_dict:
             cur_len = sum(len(conv['value'].split()) for conv in sample['conversations'])
-            cur_len = cur_len if 'images' in sample else -cur_len
+            cur_len = cur_len if 'image' in sample else -cur_len
             length_list.append(cur_len)
         return length_list
 
@@ -702,11 +699,11 @@ class LazySupervisedDataset(Dataset):
 
         # image exist in the data
         if 'image' in self.list_data_dict[i]:
-            data_dict['images'] = image
+            data_dict['image'] = image
         elif self.data_args.is_multimodal:
             # image does not exist in the data, but the model is multimodal
             crop_size = self.data_args.image_processor.crop_size
-            data_dict['images'] = torch.zeros(3, crop_size['height'], crop_size['width'])
+            data_dict['image'] = torch.zeros(3, crop_size['height'], crop_size['width'])
         return data_dict
 
 
@@ -734,8 +731,8 @@ class DataCollatorForSupervisedDataset(object):
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
 
-        if 'images' in instances[0]:
-            images = [instance['images'] for instance in instances]
+        if 'image' in instances[0]:
+            images = [instance['image'] for instance in instances]
             if all(x is not None and x.shape == images[0].shape for x in images):
                 batch['images'] = torch.stack(images)
             else:
@@ -762,6 +759,7 @@ def train():
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    # print(model_args, data_args, training_args)
     local_rank = training_args.local_rank
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
 
@@ -800,6 +798,11 @@ def train():
                 cache_dir=training_args.cache_dir,
                 **bnb_model_from_pretrained_args
             )
+            # model = LlavaLlamaForCausalLM.from_pretrained(
+            #     "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/codellama/models--codellama--CodeLlama-7b-hf/snapshots/bc5283229e2fe411552f55c71657e97edf79066c",
+            #     cache_dir=training_args.cache_dir,
+            #     **bnb_model_from_pretrained_args
+            # )
     else:
         model = transformers.LlamaForCausalLM.from_pretrained(
             model_args.model_name_or_path,
@@ -850,12 +853,22 @@ def train():
             padding_side="right"
         )
     else:
+        # tokenizer = transformers.AutoTokenizer.from_pretrained(
+        #     model_args.model_name_or_path,
+        #     cache_dir=training_args.cache_dir,
+        #     model_max_length=training_args.model_max_length,
+        #     padding_side="right",
+        #     use_fast=False,
+        # )
         tokenizer = transformers.AutoTokenizer.from_pretrained(
-            model_args.model_name_or_path,
+            # "LLM360/CrystalCoder",
+            # revision="CrystalCoder_phase1_checkpoint_055500",
+            # "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/llava/model/language_model/crystal_coder/",
+            "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/codellama/models--codellama--CodeLlama-7b-hf/snapshots/bc5283229e2fe411552f55c71657e97edf79066c",
             cache_dir=training_args.cache_dir,
             model_max_length=training_args.model_max_length,
             padding_side="right",
-            use_fast=False,
+            trust_remote_code=True
         )
 
     if model_args.version == "v0":
@@ -890,7 +903,12 @@ def train():
         model.config.tokenizer_padding_side = tokenizer.padding_side
         model.config.tokenizer_model_max_length = tokenizer.model_max_length
 
+        # print("Model_config", model.config)
+        # print("tune_mm_mlp_adapter args", model_args.tune_mm_mlp_adapter)
+        # print("mm", training_args.tune_mm_mlp_adapter)
         model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
+        # model.config.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
+
         if model_args.tune_mm_mlp_adapter:
             model.requires_grad_(False)
             for p in model.get_model().mm_projector.parameters():

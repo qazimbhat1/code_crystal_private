@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=ft13b_rerun # Job name
-#SBATCH --output=ONLY_JUNBO_NEW_COMPLEX_+_llava.txt
-#SBATCH --nodes=2
-#SBATCH --nodelist=gpumid-11,gpumid-12
+#SBATCH --output=7b_llava-v1.5-7b-code_llama-unified-pix2code-junbo-all-llava-QA.txt
+#SBATCH --nodes=4
+#SBATCH --nodelist=gpumid-25,gpumid-26,gpumid-27,gpumid-28
 #SBATCH --mem=200G
 #SBATCH --cpus-per-task=16
 #SBATCH --gres=gpu:4
@@ -11,12 +11,12 @@
 
 deepspeed --hostfile /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/llava_finetune_data/hostfile.txt llava/train/train_mem.py \
     --deepspeed ./scripts/zero3.json \
-    --model_name_or_path lmsys/vicuna-13b-v1.5 \
+    --model_name_or_path codellama/CodeLlama-7b-hf \
     --version v1 \
-    --data_path /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/llava_finetune_data/llava_final_v1_5_ONLY_Junbo_new_instructions_+_llava.json \
+    --data_path /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/llava_final_v1_5_Unified_web_style_Junbo10k_pix2code_Junbo50k_QA_150k_+_LLAVA_Full.json \
     --image_folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/llava_finetune_data \
     --vision_tower openai/clip-vit-large-patch14-336 \
-    --pretrain_mm_mlp_adapter ./checkpoints/llava-v1.5-13b-pretrain/mm_projector.bin \
+    --pretrain_mm_mlp_adapter /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/checkpoints/llava-v1.5-7b-pretrain-codellama/mm_projector.bin \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
     --mm_use_im_start_end False \
@@ -24,11 +24,11 @@ deepspeed --hostfile /lustre/scratch/shared-folders/vision-project/Code/qazim.bh
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints/llava-v1.5-13b-ONLY_JUNBO_NEW_INSTRUCTIONS_+_LLAVA \
+    --output_dir ./checkpoints/llava-v1.5-7b-code_llama-unified-pix2code-junbo-all-llava-QA \
     --num_train_epochs 1 \
     --per_device_train_batch_size 8 \
     --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 1 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 50000 \
