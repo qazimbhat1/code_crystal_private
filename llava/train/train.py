@@ -36,6 +36,8 @@ from llava.mm_utils import tokenizer_image_token
 
 from PIL import Image
 
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
 
 local_rank = None
 
@@ -165,15 +167,12 @@ def find_all_linear_names(model):
     lora_module_names = set()
     multimodal_keywords = ['mm_projector', 'vision_tower', 'vision_resampler']
     for name, module in model.named_modules():
-        # print(name, str(type(module)))
-
         if any(mm_keyword in name for mm_keyword in multimodal_keywords):
             continue
         if isinstance(module, cls):
             names = name.split('.')
             lora_module_names.add(names[0] if len(names) == 1 else names[-1])
-    # print(lora_module_names)
-    # raise
+
     if 'lm_head' in lora_module_names: # needed for 16-bit
         lora_module_names.remove('lm_head')
     return list(lora_module_names)
@@ -656,7 +655,7 @@ class LazySupervisedDataset(Dataset):
         length_list = []
         for sample in self.list_data_dict:
             cur_len = sum(len(conv['value'].split()) for conv in sample['conversations'])
-            cur_len = cur_len if 'images' in sample else -cur_len
+            cur_len = cur_len if 'image' in sample else -cur_len
             length_list.append(cur_len)
         return length_list
 
@@ -702,11 +701,11 @@ class LazySupervisedDataset(Dataset):
 
         # image exist in the data
         if 'image' in self.list_data_dict[i]:
-            data_dict['images'] = image
+            data_dict['image'] = image
         elif self.data_args.is_multimodal:
             # image does not exist in the data, but the model is multimodal
             crop_size = self.data_args.image_processor.crop_size
-            data_dict['images'] = torch.zeros(3, crop_size['height'], crop_size['width'])
+            data_dict['image'] = torch.zeros(3, crop_size['height'], crop_size['width'])
         return data_dict
 
 
@@ -734,8 +733,8 @@ class DataCollatorForSupervisedDataset(object):
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
         )
 
-        if 'images' in instances[0]:
-            images = [instance['images'] for instance in instances]
+        if 'image' in instances[0]:
+            images = [instance['image'] for instance in instances]
             if all(x is not None and x.shape == images[0].shape for x in images):
                 batch['images'] = torch.stack(images)
             else:
@@ -785,7 +784,10 @@ def train():
         ))
 
     if model_args.vision_tower is not None:
+        #print("out")
         if 'mpt' in model_args.model_name_or_path:
+            #print("in")
+            #raise
             config = transformers.AutoConfig.from_pretrained(model_args.model_name_or_path, trust_remote_code=True)
             config.attn_config['attn_impl'] = training_args.mpt_attn_impl
             model = LlavaMPTForCausalLM.from_pretrained(
@@ -794,13 +796,32 @@ def train():
                 cache_dir=training_args.cache_dir,
                 **bnb_model_from_pretrained_args
             )
+        # elif 'LLM360' in model_args.model_name_or_path:
+        #     print("======Loading MBZ CodeLLM======")
+        #     model = AutoModelForCausalLM.from_pretrained(
+        #         model_args.model_name_or_path,
+        #         cache_dir=training_args.cache_dir,
+        #         trust_remote_code=True,
+        #         **bnb_model_from_pretrained_args
+        #     )
         else:
-            model = LlavaLlamaForCausalLM.from_pretrained(
+            #print("in_else")
+            #raise
+            model = LlavaCrystalForCausalLM.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
+                revision="CrystalCoder_phase1_checkpoint_055500",
+                trust_remote_code=True,
                 **bnb_model_from_pretrained_args
             )
+            # model = AutoModelForCausalLM.from_pretrained(
+            #     "LLM360/CrystalCoder",
+            #     revision="CrystalCoder_phase1_checkpoint_055500",
+            #     trust_remote_code=True
+            # )
     else:
+        #print("out_else")
+        #raise
         model = transformers.LlamaForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
@@ -849,13 +870,27 @@ def train():
             model_max_length=training_args.model_max_length,
             padding_side="right"
         )
+    # elif 'CODELLM' in model_args.model_name_or_path:
+    #     print("======Loading MBZ CodeLLM Tokenizer======")
+    #     tokenizer = transformers.AutoTokenizer.from_pretrained(
+    #         model_args.model_name_or_path, 
+    #         trust_remote_code=True)
     else:
-        tokenizer = transformers.AutoTokenizer.from_pretrained(
-            model_args.model_name_or_path,
+        # tokenizer = transformers.AutoTokenizer.from_pretrained(
+        #     model_args.model_name_or_path,
+        #     cache_dir=training_args.cache_dir,
+        #     model_max_length=training_args.model_max_length,
+        #     padding_side="right",
+        #     use_fast=False,
+        # )
+        tokenizer = AutoTokenizer.from_pretrained(
+            # "LLM360/CrystalCoder",
+            # revision="CrystalCoder_phase1_checkpoint_055500",
+            "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/llava/model/language_model/crystal_coder/",
             cache_dir=training_args.cache_dir,
             model_max_length=training_args.model_max_length,
             padding_side="right",
-            use_fast=False,
+            trust_remote_code=True
         )
 
     if model_args.version == "v0":
@@ -925,6 +960,7 @@ def train():
 
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_args)
+    #raise
     trainer = LLaVATrainer(model=model,
                     tokenizer=tokenizer,
                     args=training_args,

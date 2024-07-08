@@ -1,6 +1,15 @@
 #!/bin/bash
+#SBATCH --job-name=pretrain_codellm_llava # Job name
+#SBATCH --output=pretrain_codellm_llava.txt
+#SBATCH --nodes=4
+#SBATCH --nodelist=gpumid-05,gpumid-06,gpumid-07,gpumid-08
+#SBATCH --mem=200G
+#SBATCH --cpus-per-task=16
+#SBATCH --gres=gpu:4
+#SBATCH -p gpumid
+#SBATCH --reservation=vision
 
-deepspeed llava/train/train_mem.py \
+deepspeed --hostfile /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/llava_finetune_data/hostfile.txt llava/train/train_mem.py \
     --deepspeed ./scripts/zero2.json \
     --model_name_or_path LLM360/CrystalCoder \
     --version plain \
@@ -13,7 +22,7 @@ deepspeed llava/train/train_mem.py \
     --mm_use_im_start_end False \
     --mm_use_im_patch_token False \
     --bf16 True \
-    --output_dir ./checkpoints/llava-v1.5-13b-pretrain-codellm \
+    --output_dir ./checkpoints/llava-v1.5-13b-pretrain-codellm+llava \
     --num_train_epochs 1 \
     --per_device_train_batch_size 32 \
     --per_device_eval_batch_size 4 \
