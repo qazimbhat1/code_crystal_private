@@ -1,20 +1,9 @@
-#!/bin/bash
-#SBATCH --job-name=pretrain_crystal_chat_llava # Job name
-#SBATCH --output=pretrain_crystal_chat_llava.txt
-#SBATCH --nodes=4
-#SBATCH --nodelist=gpumid-09,gpumid-10,gpumid-11,gpumid-12
-#SBATCH --mem=200G
-#SBATCH --cpus-per-task=16
-#SBATCH --gres=gpu:4
-#SBATCH -p gpumid
-#SBATCH --reservation=vision
-
-deepspeed --hostfile /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/llava_finetune_data/hostfile_new.txt llava/train/train_mem.py \
+deepspeed llava/train/train_mem.py \
     --deepspeed ./scripts/zero2.json \
     --model_name_or_path LLM360/CrystalChat \
     --version plain \
-    --data_path /lustre/scratch/shared-folders/vision-project/Backup/llava_data/pretrain_json/LLaVA_558k/blip_laion_cc_sbu_558k.json \
-    --image_folder /lustre/scratch/shared-folders/vision-project/Backup/llava_data/llava_pretrain_image/  \
+    --data_path /path/to/pretrain_json/LLaVA_558k/blip_laion_cc_sbu_558k.json \
+    --image_folder /path/to/llava_data/llava_pretrain_image/  \
     --vision_tower openai/clip-vit-large-patch14-336 \
     --mm_projector_type mlp2x_gelu \
     --tune_mm_mlp_adapter True \

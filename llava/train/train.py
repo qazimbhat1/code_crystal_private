@@ -168,12 +168,8 @@ def find_all_linear_names(model):
     lora_module_names = set()
     multimodal_keywords = ['mm_projector', 'vision_tower', 'vision_resampler']
     for name, module in model.named_modules():
-        # print(name, str(type(module)))
         if any(mm_keyword in name for mm_keyword in multimodal_keywords):
             continue
-        # if 'Linear' in str(type(module)):
-        #     print("hhh", name, module)
-        #     raise
         if isinstance(module, cls) or isinstance(module, cls_conv2d):
             names = name.split('.')
             lora_module_names.add(names[0] if len(names) == 1 else names[-1])
@@ -788,10 +784,7 @@ def train():
         ))
 
     if model_args.vision_tower is not None:
-        #print("out")
         if 'mpt' in model_args.model_name_or_path:
-            #print("in")
-            #raise
             config = transformers.AutoConfig.from_pretrained(model_args.model_name_or_path, trust_remote_code=True)
             config.attn_config['attn_impl'] = training_args.mpt_attn_impl
             model = LlavaMPTForCausalLM.from_pretrained(
@@ -800,27 +793,10 @@ def train():
                 cache_dir=training_args.cache_dir,
                 **bnb_model_from_pretrained_args
             )
-        # elif 'LLM360' in model_args.model_name_or_path:
-        #     print("======Loading MBZ CodeLLM======")
-        #     model = AutoModelForCausalLM.from_pretrained(
-        #         model_args.model_name_or_path,
-        #         cache_dir=training_args.cache_dir,
-        #         trust_remote_code=True,
-        #         **bnb_model_from_pretrained_args
-        #     )
         elif 'lora' in model_args.model_name_or_path:
-            # config = transformers.AutoConfig.from_pretrained(model_args.model_name_or_path)
-            # model_base_path = '/lustre/scratch/shared-folders/vision-project/Code/jinhong.wang/llava1.5_llama2/pretweight/llama2_13b_hfweight'
-            # model = LlavaLlamaForCausalLM.from_pretrained(
-            #     model_base_path,
-            #     config=config,
-            #     cache_dir=training_args.cache_dir,
-            #     **bnb_model_from_pretrained_args
-            # )
             model = LlavaCrystalForCausalLM.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
-                # revision="CrystalCoder_phase1_checkpoint_055500",
                 trust_remote_code=True,
                 **bnb_model_from_pretrained_args
                 )
@@ -857,38 +833,19 @@ def train():
                     p.requires_grad = True
             print('Trainable parameter:', sum(p.numel() for p in model.parameters() if p.requires_grad), sum(p.numel() for p in model.parameters()))
         elif 'Llama-2' in model_args.model_name_or_path:
-            
             model = LlavaLlamaForCausalLM.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
                 **bnb_model_from_pretrained_args
             )
         else:
-            #print("in_else")
-            #raise
-            # model = LlavaCrystalForCausalLM.from_pretrained(
-            #     model_args.model_name_or_path,
-            #     cache_dir=training_args.cache_dir,
-            #     revision="CrystalCoder_phase1_checkpoint_055500",
-            #     trust_remote_code=True,
-            #     **bnb_model_from_pretrained_args
-            # )
-            # model = AutoModelForCausalLM.from_pretrained(
-            #     "LLM360/CrystalCoder",
-            #     revision="CrystalCoder_phase1_checkpoint_055500",
-            #     trust_remote_code=True
-            # )
-
             model = LlavaCrystalForCausalLM.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
-                # revision="CrystalCoder_phase1_checkpoint_055500",
                 trust_remote_code=True,
                 **bnb_model_from_pretrained_args
             )
     else:
-        #print("out_else")
-        #raise
         model = transformers.LlamaForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
@@ -937,11 +894,6 @@ def train():
             model_max_length=training_args.model_max_length,
             padding_side="right"
         )
-    # elif 'CODELLM' in model_args.model_name_or_path:
-    #     print("======Loading MBZ CodeLLM Tokenizer======")
-    #     tokenizer = transformers.AutoTokenizer.from_pretrained(
-    #         model_args.model_name_or_path, 
-    #         trust_remote_code=True)
     elif 'lora' in model_args.model_name_or_path:
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             model_base_path,
@@ -950,13 +902,6 @@ def train():
             padding_side="right",
             use_fast=False,
         )
-        # tokenizer = AutoTokenizer.from_pretrained(
-        #     "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/llava/model/language_model/crystal_chat/",
-        #     cache_dir=training_args.cache_dir,
-        #     model_max_length=training_args.model_max_length,
-        #     padding_side="right",
-        #     trust_remote_code=True
-        # )
     elif 'Llama-2' in model_args.model_name_or_path:
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             model_args.model_name_or_path,
@@ -965,26 +910,10 @@ def train():
             padding_side="right",
             use_fast=False,
         )
-        print(tokenizer)
     else:
-        # tokenizer = transformers.AutoTokenizer.from_pretrained(
-        #     model_args.model_name_or_path,
-        #     cache_dir=training_args.cache_dir,
-        #     model_max_length=training_args.model_max_length,
-        #     padding_side="right",
-        #     use_fast=False,
-        # )
-        # tokenizer = AutoTokenizer.from_pretrained(
-        #     # "LLM360/CrystalCoder",
-        #     # revision="CrystalCoder_phase1_checkpoint_055500",
-        #     "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/llava/model/language_model/crystal_coder/",
-        #     cache_dir=training_args.cache_dir,
-        #     model_max_length=training_args.model_max_length,
-        #     padding_side="right",
-        #     trust_remote_code=True
-        # )
+        tokenizer_path = os.path.join(os.getcwd(), 'llava/model/language_model/crystal_chat/')
         tokenizer = AutoTokenizer.from_pretrained(
-            "/lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/llava/model/language_model/crystal_chat/",
+            tokenizer_path,
             cache_dir=training_args.cache_dir,
             model_max_length=training_args.model_max_length,
             padding_side="right",
@@ -1058,7 +987,6 @@ def train():
 
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_args)
-    #raise
     trainer = LLaVATrainer(model=model,
                     tokenizer=tokenizer,
                     args=training_args,

@@ -36,7 +36,6 @@ class LlavaCrystalModel(LlavaMetaModel, CrystalCoderModel):
     config_class = LlavaCrystalConfig
 
     def __init__(self, config: CrystalCoderConfig):
-        #TODO: check with mpt if anything needed here
         super(LlavaCrystalModel, self).__init__(config)
     def embed_tokens(self, x):
         return self.wte(x)
@@ -46,19 +45,13 @@ class LlavaCrystalForCausalLM(CrystalCoderLMHeadModel, LlavaMetaForCausalLM):
 
     def __init__(self, config):
         super(CrystalCoderLMHeadModel, self).__init__(config)
-        # print(config)
         self.transformer = LlavaCrystalModel(config)
 
 
         self.output_logits_scale = config.mup_output_alpha * config.mup_width_scale
         # Model parallel
         self.model_parallel = False
-        self.device_map = None
-        # print(self.transformer)
-        # print("embedding", self.transformer.get_input_embeddings())
-        # self.pretraining_tp = config.pretraining_tp
-
-        
+        self.device_map = None        
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
@@ -87,7 +80,7 @@ class LlavaCrystalForCausalLM(CrystalCoderLMHeadModel, LlavaMetaForCausalLM):
         output_hidden_states: Optional[bool] = None,
         images: Optional[torch.FloatTensor] = None,
         return_dict: Optional[bool] = None,
-        token_type_ids: Optional[torch.LongTensor] = None, #TODO: check these 4 below added from crystal coder class
+        token_type_ids: Optional[torch.LongTensor] = None,
         head_mask: Optional[torch.FloatTensor] = None,
         encoder_hidden_states: Optional[torch.Tensor] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None
@@ -134,14 +127,3 @@ class LlavaCrystalForCausalLM(CrystalCoderLMHeadModel, LlavaMetaForCausalLM):
 
 AutoConfig.register("llava_crystal", LlavaCrystalConfig)
 AutoModelForCausalLM.register(LlavaCrystalConfig, LlavaCrystalForCausalLM)
-
-
-# from transformers import AutoConfig, AutoModel, AutoModelForCausalLM, AutoTokenizer
-# from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
-# from configuration_crystalcoder import CrystalCoderConfig
-
-
-# AutoConfig.register("crystalcoder", CrystalCoderConfig)
-# AutoModel.register(CrystalCoderConfig, CrystalCoderModel)
-# AutoModelForCausalLM.register(CrystalCoderConfig, CrystalCoderLMHeadModel)
-# AutoTokenizer.register(CrystalCoderConfig, fast_tokenizer_class=PreTrainedTokenizerFast)
