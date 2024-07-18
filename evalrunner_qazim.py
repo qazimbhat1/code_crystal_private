@@ -50,13 +50,13 @@ class eval_commands:
     def mme(self,runname):
         return "python -m llava.eval.model_vqa_loader \\\n\
     --model-path %s \\\n\
-    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/MME/llava_mme.jsonl \\\n\
-    --image-folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/MME/MME_Benchmark_release_version \\\n\
-    --answers-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/MME/answers/%s.jsonl \\\n\
+    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/MME/llava_mme.jsonl \\\n\
+    --image-folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/MME/MME_Benchmark_release_version \\\n\
+    --answers-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/MME/answers/%s.jsonl \\\n\
     --temperature 0 \\\n\
     --conv-mode vicuna_v1\n\
 \n\
-cd /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/MME \n\
+cd /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/MME \n\
 \n\
 python convert_answer_to_mme.py --experiment %s\n\n\
 cd eval_tool \n\
@@ -68,48 +68,48 @@ python calculation.py --results_dir answers/%s"%(runname, self.fr(runname), self
 \n\
 python -m llava.eval.model_vqa_loader \\\n\
     --model-path %s \\\n\
-    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/pope/llava_pope_test.jsonl \\\n\
-    --image-folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/pope/val2014 \\\n\
-    --answers-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/pope/answers/%s.jsonl \\\n\
+    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/pope/llava_pope_test.jsonl \\\n\
+    --image-folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/pope/val2014 \\\n\
+    --answers-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/pope/answers/%s.jsonl \\\n\
     --temperature 0 \\\n\
     --conv-mode vicuna_v1\n\
 \n\
 python llava/eval/eval_pope.py \\\n\
-    --annotation-dir /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/pope/coco \\\n\
-    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/pope/llava_pope_test.jsonl \\\n\
-    --result-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/pope/answers/%s.jsonl\n\
+    --annotation-dir /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/pope/coco \\\n\
+    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/pope/llava_pope_test.jsonl \\\n\
+    --result-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/pope/answers/%s.jsonl\n\
 "%(runname, self.fr(runname), self.fr(runname))
     
     def sqa(self,runname):
         return "python llava/eval/model_vqa_science.py \\\n\
     --model-path %s \\\n\
-    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/scienceqa/llava_test_CQM-A.json \\\n\
-    --image-folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/scienceqa/test \\\n\
-    --answers-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/scienceqa/answers/%s.jsonl \\\n\
+    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/scienceqa/llava_test_CQM-A.json \\\n\
+    --image-folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/scienceqa/test \\\n\
+    --answers-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/scienceqa/answers/%s.jsonl \\\n\
     --single-pred-prompt \\\n\
     --temperature 0 \\\n\
     --conv-mode vicuna_v1\n\
 \n\
 python llava/eval/eval_science_qa.py \\\n\
-    --base-dir /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/scienceqa \\\n\
-    --result-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/scienceqa/answers/%s.jsonl \\\n\
-    --output-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/scienceqa/answers/%s.jsonl \\\n\
-    --output-result /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/scienceqa/answers/%s.json"%(runname, self.fr(runname), self.fr(runname), self.fr(runname), self.fr(runname))
+    --base-dir /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/scienceqa \\\n\
+    --result-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/scienceqa/answers/%s.jsonl \\\n\
+    --output-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/scienceqa/answers/%s.jsonl \\\n\
+    --output-result /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/scienceqa/answers/%s.json"%(runname, self.fr(runname), self.fr(runname), self.fr(runname), self.fr(runname))
     
     def textvqa(self, runname):
         return "\nCUDA_VISIBLE_DEVICES=0,1,2,3 \n\
         \n\
 python -m llava.eval.model_vqa_loader \\\n\
     --model-path %s \\\n\
-    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/textvqa/llava_textvqa_val_v051_ocr.jsonl \\\n\
-    --image-folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/textvqa/train_images \\\n\
-    --answers-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/textvqa/answers/%s.jsonl \\\n\
+    --question-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/textvqa/llava_textvqa_val_v051_ocr.jsonl \\\n\
+    --image-folder /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/textvqa/train_images \\\n\
+    --answers-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/textvqa/answers/%s.jsonl \\\n\
     --temperature 0 \\\n\
     --conv-mode vicuna_v1 \n\
 \n\
 python -m llava.eval.eval_textvqa \\\n\
-    --annotation-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/textvqa/TextVQA_0.5.1_val.json \\\n\
-    --result-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/LLaVA/playground/data/eval/textvqa/answers/%s.jsonl"%(runname, self.fr(runname), self.fr(runname))
+    --annotation-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/textvqa/TextVQA_0.5.1_val.json \\\n\
+    --result-file /lustre/scratch/shared-folders/vision-project/Code/qazim.bhat/fork_LLaVA/playground/data/eval/textvqa/answers/%s.jsonl"%(runname, self.fr(runname), self.fr(runname))
 
 
 if __name__ == "__main__":
